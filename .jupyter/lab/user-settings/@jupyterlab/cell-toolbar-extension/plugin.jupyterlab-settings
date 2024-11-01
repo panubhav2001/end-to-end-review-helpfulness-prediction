@@ -1,0 +1,20 @@
+{
+    // Cell Toolbar
+    // @jupyterlab/cell-toolbar-extension:plugin
+    // Cell Toolbar Settings.
+    // *****************************************
+
+    // List of toolbar items
+    // An item is defined by a 'name', a 'command' name, and an 'icon' name
+    "toolbar": [
+        {
+            "name": "notebook-run-cell",
+            "command": "runmenu:run",
+            "rank": 0
+        },
+        {
+            "name": "bigquery-editor-cell",
+            "command": "bigquery_editor_cell_plugin:activate"
+        }
+    ]
+}

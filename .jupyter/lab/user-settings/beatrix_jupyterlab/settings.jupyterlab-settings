@@ -1,0 +1,26 @@
+{
+    // Vertex Workbench
+    // beatrix_jupyterlab:settings
+    // Vertex Workbench Settings
+    // ***************************
+
+    // Environment image
+    // Docker container used in the Vertex training job.
+    "environmentImage": "gcr.io/deeplearning-platform-release/base-cpu:latest",
+
+    // GCS Bucket path
+    // GCS Bucket path where Notebooks will be written to
+    "gcsBucket": "gs://airy-box-431604-j9-us-notebooks",
+
+    // Notebook location
+    // Location where the Notebook execution will be run.
+    "location": "us-central1",
+
+    // Google Cloud project identifier
+    // Google Cloud project identifier
+    "projectId": "airy-box-431604-j9",
+
+    // Vertex Job Accelerator schedule type
+    // Default schedule type used to show create form for 'single' or 'recurring' executions
+    "scheduleType": "single"
+}
