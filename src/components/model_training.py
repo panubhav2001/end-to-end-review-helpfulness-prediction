@@ -1,59 +1,27 @@
-import sys
 import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
-
-import pandas as pd
-from google.cloud import bigquery
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report
 import joblib
-from src.components.preprocess import preprocess_data  # Import the function
-from sklearn.pipeline import Pipeline
+import mlflow
+from google.cloud import storage
+from src.components.utils import load_data_from_bigquery, train_and_evaluate_model, log_best_model, deploy_model_to_vertex_ai
 from src.logger import logger
 from src.exception import CustomException
+from src.components.preprocess import preprocess_data
+import datetime
+import pytz
 
-# Initialize BigQuery client
-client = bigquery.Client()
+# Define IST timezone
+IST = pytz.timezone('Asia/Kolkata')
 
-def load_data_from_bigquery(query):
-    try:
-        df = client.query(query).to_dataframe()
-        logger.info("Data loaded from BigQuery successfully.")
-        return df
-    except Exception as e:
-        raise CustomException("Error loading data from BigQuery", e)
-
-def train_model(X_train, y_train):
-    try:
-        model =  RandomForestClassifier(random_state=42)
-        model.fit(X_train, y_train)
-        logger.info("Model training completed successfully.")
-        return model
-    except Exception as e:
-        # Pass the error message as the first argument and the exception `e` as the second argument
-        raise CustomException("Error training the model", e)
-
-def evaluate_model(model, X_test, y_test):
-    try:
-        y_pred = model.predict(X_test)
-        accuracy = accuracy_score(y_test, y_pred)
-        report = classification_report(y_test, y_pred)
-        logger.info("Model evaluation completed.")
-        logger.info(f"Accuracy: {accuracy:.4f}\nClassification Report:\n{report}")
-        return accuracy, report
-    except Exception as e:
-        raise CustomException("Error evaluating the model", e)
-
-def save_model(model, model_path='artifacts/model.pkl'):
-    try:
-        joblib.dump(model, model_path)
-        logger.info(f"Model saved to {model_path}")
-    except Exception as e:
-        raise CustomException("Error saving the model", e)
+# Set Google Cloud Storage bucket details
+bucket_name = "amazon-reviews-project"
+project_id = "airy-box-431604-j9"
+region = "us-central1"
 
 def main():
+    # Create a unique experiment name
+    experiment_name = f"Amazon_Reviews_Helpfulness_{datetime.datetime.now(IST).strftime('%Y-%m-%d_%H-%M-%S')}"
+    mlflow.set_experiment(experiment_name)
+    
     query = """
     SELECT * FROM `airy-box-431604-j9.amazon_reviews.clean_data`
     """
@@ -63,17 +31,21 @@ def main():
         logger.info(f"Loaded {len(df)} rows.")
 
         logger.info("Preprocessing data...")
-        X, y = preprocess_data(df)
+        X, y = preprocess_data(df)  # Assuming preprocess_data function exists and is imported
         
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        
-        logger.info("Training model...")
-        model = train_model(X_train, y_train)
-        
-        logger.info("Evaluating model...")
-        accuracy, report = evaluate_model(model, X_test, y_test)
+        # Train and evaluate models
+        logger.info("Training and evaluating models...")
+        best_model, best_model_name, best_accuracy = train_and_evaluate_model(X, y, df)
 
-        save_model(model)
+        # Log and register the best model
+        logger.info("Logging and registering the best model...")
+        bucket_name = "amazon-reviews-project"  # Replace with your bucket name
+        
+        model_gcs_path = log_best_model(best_model, best_model_name, best_accuracy, bucket_name)
+        
+        #Deploy the model to endpoint
+        deploy_model_to_vertex_ai(project_id, region, bucket_name, best_model_name, model_gcs_path)
+        
     except CustomException as e:
         logger.error(e)
 

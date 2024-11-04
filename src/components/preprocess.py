@@ -54,7 +54,11 @@ def preprocess_data(df):
             ('scaler', StandardScaler())
         ])
         X_num = numerical_transformer.fit_transform(X[numerical_cols])
-
+        
+        # Save the numerical transformer
+        joblib.dump(numerical_transformer, 'artifacts/numerical_transformer.pkl')
+        logger.info("Numerical Transformer saved as pickle file")
+        
         # 'review_text' column transformation
         review_text_transformer = TfidfVectorizerTransformer(max_features=100)
         X_review_text = review_text_transformer.fit_transform(X['review_text'])

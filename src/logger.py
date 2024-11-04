@@ -2,13 +2,17 @@ import logging
 import os
 from datetime import datetime
 from google.cloud import storage
+import pytz
+
+# Define IST timezone
+IST = pytz.timezone('Asia/Kolkata')
 
 # Set up Google Cloud Storage (GCS) bucket configuration
 GCS_BUCKET_NAME = "amazon-reviews-project"  # Replace with your GCS bucket name
 GCS_LOGS_FOLDER = "app_logs/"  # Folder in the bucket where logs will be saved
 
 # Create the log file with a timestamped name
-LOG_FILE = f"{datetime.now().strftime('%m_%d_%Y_%H_%M_%S')}.log"
+LOG_FILE = f"{datetime.now(IST).strftime('%m_%d_%Y_%H_%M_%S')}.log"
 logs_local_path = os.path.join(os.getcwd(), "logs")
 os.makedirs(logs_local_path, exist_ok=True)
 
