@@ -1,0 +1,15 @@
+artifact_uri: file:///home/jupyter/end-to-end-review-helpfulness-prediction/mlruns/171903727323613113/6e47710ffb23483297d11fd194bcc64f/artifacts
+end_time: 1730786313695
+entry_point_name: ''
+experiment_id: '171903727323613113'
+lifecycle_stage: active
+run_id: 6e47710ffb23483297d11fd194bcc64f
+run_name: RandomForest
+run_uuid: 6e47710ffb23483297d11fd194bcc64f
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1730786310539
+status: 3
+tags: []
+user_id: jupyter

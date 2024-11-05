@@ -53,10 +53,14 @@ def train_and_evaluate_model(X, y, dataset_df):
     best_accuracy = 0
     best_model_name = ""
 
+    # Log dataset in MLflow
     timestamp = datetime.now(IST).strftime('%Y%m%d_%H%M%S')
     dataset_path = f"artifacts/datasets/dataset_{timestamp}.csv"
     dataset_df.to_csv(dataset_path, index=False)
 
+    with mlflow.start_run(run_name="Dataset_Log") as dataset_run:
+        mlflow.log_artifact(dataset_path, artifact_path="datasets")
+    
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     for model_name, model in models.items():
@@ -92,35 +96,64 @@ def train_and_evaluate_model(X, y, dataset_df):
 
     return best_model, best_model_name, best_accuracy
 
+def get_existing_model_performance(model_name):
+    """Retrieve the accuracy of the existing model in the MLflow registry."""
+    try:
+        # Get the latest version of the registered model
+        client = mlflow.tracking.MlflowClient()
+        latest_versions = client.get_latest_versions(model_name)
+        
+        if latest_versions:
+            latest_version = latest_versions[-1]
+            run_id = latest_version.run_id
+
+            # Get metrics from the run
+            run_metrics = client.get_run(run_id).data.metrics
+            existing_accuracy = run_metrics.get("accuracy", 0)
+            return existing_accuracy
+        else:
+            logger.info(f"No registered versions of {model_name} found in the registry.")
+            return 0
+    except Exception as e:
+        raise CustomException(f"Error retrieving existing model performance for {model_name}", e)
+
 def log_best_model(best_model, best_model_name, best_accuracy, bucket_name):
     """Log the best model to MLflow, register it, and upload it to Google Cloud Storage."""
-    with mlflow.start_run(run_name="Best_Model_Deployment") as best_run:
-        mlflow.log_param("model_name", best_model_name)
-        mlflow.log_metric("accuracy", best_accuracy)
-        mlflow.sklearn.log_model(best_model, "best_model")
+    existing_accuracy = get_existing_model_performance(best_model_name)
+    logger.info(f"Existing model accuracy: {existing_accuracy:.4f}")
+    
+    if best_accuracy > existing_accuracy:
+        logger.info(f"New model performs better than the existing model ({best_accuracy:.4f} > {existing_accuracy:.4f}). Proceeding with deployment.")
 
-        model_uri = f"runs:/{best_run.info.run_id}/best_model"
-        mlflow.register_model(model_uri, best_model_name)
-        logger.info(f"Best model {best_model_name} registered in MLflow Model Registry.")
+        with mlflow.start_run(run_name="Best_Model_Deployment") as best_run:
+            mlflow.log_param("model_name", best_model_name)
+            mlflow.log_metric("accuracy", best_accuracy)
+            mlflow.sklearn.log_model(best_model, "best_model")
 
-        local_model_path = 'artifacts/best_model.pkl'
-        joblib.dump(best_model, local_model_path)
-        logger.info(f"Best model saved locally at {local_model_path}")
+            model_uri = f"runs:/{best_run.info.run_id}/best_model"
+            mlflow.register_model(model_uri, best_model_name)
+            logger.info(f"Best model {best_model_name} registered in MLflow Model Registry.")
 
-        mlflow.log_artifact(local_model_path, artifact_path="artifacts")
-        logger.info("Best model and metrics logged to MLflow successfully.")
-        
-        # Upload model.pkl to GCS
-        storage_client = storage.Client()
-        bucket = storage_client.bucket(bucket_name)
-        gcs_model_path = f"model/{best_model_name}/model.pkl"
-        blob = bucket.blob(gcs_model_path)
-        blob.upload_from_filename(local_model_path)
+            local_model_path = 'artifacts/best_model.pkl'
+            joblib.dump(best_model, local_model_path)
+            logger.info(f"Best model saved locally at {local_model_path}")
 
-        logger.info(f"Best model saved to GCS at gs://{bucket_name}/{gcs_model_path}")
-        
-        # Return the GCS directory (without the file name) for Vertex AI deployment
-        return f"gs://{bucket_name}/model/{best_model_name}/"
+            mlflow.log_artifact(local_model_path, artifact_path="artifacts")
+            logger.info("Best model and metrics logged to MLflow successfully.")
+            
+            # Upload model.pkl to GCS
+            storage_client = storage.Client()
+            bucket = storage_client.bucket(bucket_name)
+            gcs_model_path = f"model/{best_model_name}/model.pkl"
+            blob = bucket.blob(gcs_model_path)
+            blob.upload_from_filename(local_model_path)
+
+            logger.info(f"Best model saved to GCS at gs://{bucket_name}/{gcs_model_path}")
+            
+            # Return the GCS directory (without the file name) for Vertex AI deployment
+            return f"gs://{bucket_name}/model/{best_model_name}/"
+    else:
+        logger.info(f"Existing model performs better or equal to the new model. Skipping deployment.")
 
 def deploy_model_to_vertex_ai(project_id, region, bucket_name, model_name, model_gcs_path):
     """Deploy the registered MLflow model to Google Vertex AI."""

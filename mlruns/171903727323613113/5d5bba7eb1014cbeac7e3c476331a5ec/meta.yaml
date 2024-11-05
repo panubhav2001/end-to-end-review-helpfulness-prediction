@@ -1,0 +1,15 @@
+artifact_uri: file:///home/jupyter/end-to-end-review-helpfulness-prediction/mlruns/171903727323613113/5d5bba7eb1014cbeac7e3c476331a5ec/artifacts
+end_time: 1730786318537
+entry_point_name: ''
+experiment_id: '171903727323613113'
+lifecycle_stage: active
+run_id: 5d5bba7eb1014cbeac7e3c476331a5ec
+run_name: XGBoost
+run_uuid: 5d5bba7eb1014cbeac7e3c476331a5ec
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1730786315901
+status: 3
+tags: []
+user_id: jupyter

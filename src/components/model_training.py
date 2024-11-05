@@ -43,8 +43,6 @@ def main():
         
         model_gcs_path = log_best_model(best_model, best_model_name, best_accuracy, bucket_name)
         
-        #Deploy the model to endpoint
-        deploy_model_to_vertex_ai(project_id, region, bucket_name, best_model_name, model_gcs_path)
         
     except CustomException as e:
         logger.error(e)

@@ -1,0 +1,14 @@
+aliases: []
+creation_timestamp: 1730786320620
+current_stage: None
+description: null
+last_updated_timestamp: 1730786320620
+name: XGBoost
+run_id: 2c937559da174ebd90dc2606c48be531
+run_link: null
+source: file:///home/jupyter/end-to-end-review-helpfulness-prediction/mlruns/171903727323613113/2c937559da174ebd90dc2606c48be531/artifacts/best_model
+status: READY
+status_message: null
+storage_location: file:///home/jupyter/end-to-end-review-helpfulness-prediction/mlruns/171903727323613113/2c937559da174ebd90dc2606c48be531/artifacts/best_model
+user_id: null
+version: 1

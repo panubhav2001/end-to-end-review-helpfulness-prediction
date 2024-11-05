@@ -10,6 +10,8 @@ from src.exception import CustomException
 
 # Download NLTK resources if not already available
 nltk.download('punkt')
+nltk.download('punkt_tab')
+nltk.download('averaged_perceptron_tagger_eng')
 
 def flesch_kincaid(text):
     try:
