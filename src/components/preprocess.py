@@ -34,14 +34,20 @@ def preprocess_data(df):
 
         # Feature engineering and target creation
         df = add_feature_columns(df)
-        bins = [0, 1, 5, float("inf")]
+
+        # Log transformation of helpful_votes to reduce skewness
+        df['log_helpful_votes'] = np.log1p(df['helpful_votes'])
+
+        # Define bins based on the log-transformed values
+        bins = [-np.inf, 1, 2, np.inf]
         labels = ["low", "medium", "high"]
-        df['helpfulness_class'] = pd.cut(df['helpful_votes'], bins=bins, labels=labels)
+        df['helpfulness_class'] = pd.cut(df['log_helpful_votes'], bins=bins, labels=labels)
         df['helpfulness_class'] = df['helpfulness_class'].fillna("low")
+        
         label_encoder = LabelEncoder()
         df['helpfulness_class_encoded'] = label_encoder.fit_transform(df['helpfulness_class'])
 
-        X = df.drop(columns=['helpful_votes', 'helpfulness_class', 'helpfulness_class_encoded'])
+        X = df.drop(columns=['helpful_votes', 'log_helpful_votes', 'helpfulness_class', 'helpfulness_class_encoded'])
         y = df['helpfulness_class_encoded']
 
         if 'review_text' not in X.columns or 'title' not in X.columns:
@@ -72,6 +78,7 @@ def preprocess_data(df):
         joblib.dump(review_text_transformer.vectorizer, 'artifacts/tfidf_vectorizer_review.pkl')
         joblib.dump(title_transformer.vectorizer, 'artifacts/tfidf_vectorizer_title.pkl')
         logger.info("Saved Tfidf Vectorizers")
+        
         # Concatenate all transformed parts
         X_transformed = np.hstack([X_num, X_review_text, X_title])
 

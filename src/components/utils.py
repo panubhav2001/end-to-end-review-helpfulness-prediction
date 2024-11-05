@@ -12,6 +12,7 @@ import mlflow
 import mlflow.sklearn
 from src.logger import logger
 from src.exception import CustomException
+from mlflow.exceptions import MlflowException
 
 # Initialize BigQuery client
 client = bigquery.Client()
@@ -50,7 +51,7 @@ def train_and_evaluate_model(X, y, dataset_df):
     }
 
     best_model = None
-    best_accuracy = 0
+    best_f1_score = 0
     best_model_name = ""
 
     # Log dataset in MLflow
@@ -87,47 +88,59 @@ def train_and_evaluate_model(X, y, dataset_df):
             mlflow.log_text(report, "classification_report.txt")
             mlflow.sklearn.log_model(model, "model")
 
-            if accuracy > best_accuracy:
-                best_accuracy = accuracy
+            if f1 > best_f1_score:
+                best_f1_score = f1
                 best_model = model
                 best_model_name = model_name
 
-            logger.info(f"{model_name} logged with accuracy: {accuracy:.4f}")
+            logger.info(f"{model_name} logged with f1 score: {f1:.4f}")
 
-    return best_model, best_model_name, best_accuracy
+    return best_model, best_model_name, best_f1_score
 
 def get_existing_model_performance(model_name):
-    """Retrieve the accuracy of the existing model in the MLflow registry."""
+    """Retrieve the F1 score of the existing model in the MLflow registry."""
     try:
         # Get the latest version of the registered model
         client = mlflow.tracking.MlflowClient()
         latest_versions = client.get_latest_versions(model_name)
-        
+
         if latest_versions:
             latest_version = latest_versions[-1]
             run_id = latest_version.run_id
 
             # Get metrics from the run
             run_metrics = client.get_run(run_id).data.metrics
-            existing_accuracy = run_metrics.get("accuracy", 0)
-            return existing_accuracy
+            existing_f1_score = run_metrics.get("f1_score", 0)
+            return existing_f1_score
         else:
             logger.info(f"No registered versions of {model_name} found in the registry.")
-            return 0
-    except Exception as e:
-        raise CustomException(f"Error retrieving existing model performance for {model_name}", e)
+            return None  # No registered model found
 
-def log_best_model(best_model, best_model_name, best_accuracy, bucket_name):
+    except MlflowException as e:
+        # Handle the specific error for model not found
+        if "Registered Model with name" in str(e):
+            logger.info(f"No registered model with name '{model_name}' found. Proceeding with new model registration.")
+            return None  # Model not found, proceed with new registration
+        else:
+            raise CustomException(f"Error retrieving existing model performance for {model_name}", e)
+
+
+def log_best_model(best_model, best_model_name, best_f1_score, bucket_name):
     """Log the best model to MLflow, register it, and upload it to Google Cloud Storage."""
-    existing_accuracy = get_existing_model_performance(best_model_name)
-    logger.info(f"Existing model accuracy: {existing_accuracy:.4f}")
+    existing_f1_score = get_existing_model_performance(best_model_name)
     
-    if best_accuracy > existing_accuracy:
-        logger.info(f"New model performs better than the existing model ({best_accuracy:.4f} > {existing_accuracy:.4f}). Proceeding with deployment.")
-
+    if existing_f1_score is None:
+        logger.info("No existing model found. Proceeding with deployment of the new model.")
+    else:
+        logger.info(f"Existing model F1 score: {existing_f1_score:.4f}")
+    
+    # Proceed with model registration if no model exists or if the new model performs better
+    if existing_f1_score is None or best_f1_score > existing_f1_score:
+        logger.info(f"New model performs better or no existing model. Proceeding with deployment.")
+        
         with mlflow.start_run(run_name="Best_Model_Deployment") as best_run:
             mlflow.log_param("model_name", best_model_name)
-            mlflow.log_metric("accuracy", best_accuracy)
+            mlflow.log_metric("f1_score", best_f1_score)
             mlflow.sklearn.log_model(best_model, "best_model")
 
             model_uri = f"runs:/{best_run.info.run_id}/best_model"
@@ -154,6 +167,7 @@ def log_best_model(best_model, best_model_name, best_accuracy, bucket_name):
             return f"gs://{bucket_name}/model/{best_model_name}/"
     else:
         logger.info(f"Existing model performs better or equal to the new model. Skipping deployment.")
+
 
 def deploy_model_to_vertex_ai(project_id, region, bucket_name, model_name, model_gcs_path):
     """Deploy the registered MLflow model to Google Vertex AI."""
