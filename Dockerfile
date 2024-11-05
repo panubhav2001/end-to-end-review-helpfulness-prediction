@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 8051
 
 # Command to run your application
-CMD ["python", "-m", "app.py"]
+CMD ["streamlit", "run", "app.py", "--server.port", "8051", "--server.address", "0.0.0.0"]
