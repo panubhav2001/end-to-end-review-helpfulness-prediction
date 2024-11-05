@@ -1,0 +1,15 @@
+artifact_uri: file:///home/jupyter/end-to-end-review-helpfulness-prediction/mlruns/613891870728206341/d305997a79074166bca10309e783e1a6/artifacts
+end_time: 1730795318764
+entry_point_name: ''
+experiment_id: '613891870728206341'
+lifecycle_stage: active
+run_id: d305997a79074166bca10309e783e1a6
+run_name: LogisticRegression
+run_uuid: d305997a79074166bca10309e783e1a6
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1730795316495
+status: 3
+tags: []
+user_id: jupyter

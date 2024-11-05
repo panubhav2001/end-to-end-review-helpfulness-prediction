@@ -1,0 +1,15 @@
+artifact_uri: file:///home/jupyter/end-to-end-review-helpfulness-prediction/mlruns/408415599099641897/8409092760604e118f41b382473b23a0/artifacts
+end_time: 1730795535738
+entry_point_name: ''
+experiment_id: '408415599099641897'
+lifecycle_stage: active
+run_id: 8409092760604e118f41b382473b23a0
+run_name: Dataset_Log
+run_uuid: 8409092760604e118f41b382473b23a0
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1730795535724
+status: 3
+tags: []
+user_id: jupyter
