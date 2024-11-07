@@ -1,6 +1,6 @@
 # Amazon Review Helpfulness Prediction App
 
-This repository contains the **Streamlit front-end application** for predicting the helpfulness of Amazon reviews using a machine learning model. The>
+This repository contains the **Streamlit front-end application** for predicting the helpfulness of Amazon reviews using a machine learning model. The app includes both a training and prediction pipeline, and is part of a larger project hosted on **Google Cloud Platform (GCP)**.
 
 ## Table of Contents
 - [App Overview](#app-overview)
@@ -28,10 +28,10 @@ The application is a **Streamlit** front-end designed to perform two main functi
 
 The app is part of a larger architecture that performs the following steps:
 
-1. **Data Collection**: A **Dataproc PySpark** job, triggered by a **Cloud Scheduler**, scrapes Amazon reviews daily and publishes messages to a **Pu>
+1. **Data Collection**: A **Dataproc PySpark** job, triggered by a **Cloud Scheduler**, scrapes Amazon reviews daily and publishes messages to a **Pub/Sub** topic.
 2. **Data Storage**: The messages are streamed to **BigQuery** via a Pub/Sub subscription.
 3. **Data Cleaning**: A scheduled query processes the raw data, cleans it, and writes it to a BigQuery table.
-4. **Model Training & Prediction**: The **Streamlit app** (this repository) reads the cleaned data, trains the model, and logs it to MLflow. The app >
+4. **Model Training & Prediction**: The **Streamlit app** (this repository) reads the cleaned data, trains the model, and logs it to MLflow. The app is also used to generate predictions based on new user input.
 
 ## Technologies Used
 - **Google Cloud Platform**:
